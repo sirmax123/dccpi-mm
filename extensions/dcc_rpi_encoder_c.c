@@ -111,6 +111,17 @@ static PyObject * dcc_rpi_encoder_c_setup(PyObject *self, PyObject *args){
     Py_RETURN_NONE;
 }
 
+static PyObject * dcc_rpi_encoder_c_shutdown(PyObject *self, PyObject *args){
+
+    digitalWrite(input1Pin, LOW);
+    digitalWrite(input2Pin, LOW);
+    digitalWrite(enablePin, LOW);
+
+    Py_RETURN_NONE;
+}
+
+
+
 static PyMethodDef DCCRPiEncoderMethods[] = {
     {"send_bit_array", dcc_rpi_encoder_c_send_bit_array, METH_VARARGS,
      "Send some bits to the tracks"},
@@ -118,6 +129,9 @@ static PyMethodDef DCCRPiEncoderMethods[] = {
      "Enable or disable a brake signal"},
     {"setup", dcc_rpi_encoder_c_setup, METH_VARARGS,
      "setup wiringPi and the default pins"},
+    {"shutdown", dcc_rpi_encoder_c_shutdown, METH_VARARGS,
+     "shutdown wiringPi and set all pins to LOW"},
+
     {NULL, NULL, 0, NULL} /* Sentinel - whatever that means */
 };
 
