@@ -32,15 +32,17 @@ class DCCGeneralPacket(object):
         if packet_type == 'service':
         # Servic e preamble is 20 b its
             self.preamble = BitArray('0b11111111111111111111')
-            self.preamble = BitArray('0b1111111111111111')
+            #self.preamble = BitArray('0b1111111111111111')
 
         else:
         # A command station must send a minimum of 14 preamble bits
             self.preamble = BitArray('0b1111111111111111')
+        self.logger.debug("Preamble is set: {p}".format(p=self.preamble))
         self.packet_start_bit = BitArray('0b0')
         self.address_byte = BitArray(address_byte)
         self.data_byte_start_bit = BitArray('0b0')
         self.data_bytes = map(BitArray, data_bytes)
+        self.logger.debug("data is: {data}".format(data=self.data_bytes))
 
         if sys.version_info.major >= 3:
             self.data_bytes = list(self.data_bytes)
