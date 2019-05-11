@@ -2,6 +2,7 @@
 
 
 set -x
+export DEBUG=1
 
 python \
-    /root/test.py
+    ${PWD}/test.py
