@@ -2,7 +2,7 @@ from setuptools import setup, Extension
 setup(
     name="dccpi_mm",
     packages=["dccpi_mm"],
-    version="0.0.1",
+    version="0.0.3",
     description="DCC protocol implementation for RaspberryPi",
     author="Max Mazur",
     author_email="sirmax123@gmail.com",
