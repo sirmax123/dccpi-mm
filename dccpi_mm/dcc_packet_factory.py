@@ -1,20 +1,23 @@
 from .dcc_logger import getLogger
 from .dcc_general_packet import DCCGeneralPacket
+from bitstring import BitArray
 
 class DCCPacketFactory(object):
     def __init__(self, address_byte='0b1111111'):
         self.logger = getLogger("DCCPacketFactory")
         self.logger.debug("DCCPacketFactory init")
 
-        self.idle_address_byte = '0b11111111'
-        self.broadcast_address_byte = '0b00000000'
+        self.idleAddressByte = '0b11111111'
+        self.broadcastAddressByte = '0b00000000'
+
+        self.functionGroupOnePrefix = '100'
 
     def DCCIdlePacket(self):
         # Idlepacket
         # Preamble        Address       Data           Checksum
         #1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
         self.logger.debug("Creating DCC Idle Packet")
-        return(DCCGeneralPacket(address_byte=self.idle_address_byte,
+        return(DCCGeneralPacket(address_byte=self.idleAddressByte,
                                 data_bytes=['0b00000000']))
 
     def DCCVerifyBitFromCVPacket(self,  bitData, bitPosition, CV, bitOperation="read"):
@@ -121,9 +124,47 @@ class DCCPacketFactory(object):
         packet_bytes.append("0b{CV_8bits:08b}".format(CV_8bits=CV_8bits))
         packet_bytes.append("0b111{bitOperation:01b}{bitData:01b}{bitPosition:03b}".format(bitOperation=bitOperation, bitData=bitData, bitPosition=bitPosition))
         self.logger.debug(packet_bytes)
-        #return(DCCGeneralPacket(address_byte=self.idle_address_byte,
+        #return(DCCGeneralPacket(address_byte=self.idleAddressByte,
         #                        data_bytes=['0b00000000'],
         #                        packet_type="service"))
-        return(DCCGeneralPacket(address_byte=self.broadcast_address_byte,
+        return(DCCGeneralPacket(address_byte=self.broadcastAddressByte,
                                 data_bytes=packet_bytes,
                                 packet_type="service"))
+
+    def FunctionPacket(self, locoAddress, functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }):
+        self.logger.debug("Creating DCC Set Function Packet")
+        self.logger.debug("FunctionPacket: functionsState={functionsState}".format(functionsState=functionsState))
+        allowedFunctions = ["Fn1", "Fn2", "Fn3", "Fn4", "FL" ]
+        # Function Group One Instruction (100)
+        # The format of this instruction is 100DDDDD
+        # Up to 5 auxiliary functions (functions FL and F1-F4) can be controlled
+        # FL: Forward Lamp
+        # by the Function Group One instruction. Bits 0-3 shall define the value of functions F1-F4
+        # with function F1 being controlled by bit 0 and function F4 being controlled by bit 3.
+        # A value of "1" shall indicate that the function is "on" while a value of "0"
+        # shall indicate that the function is "off".
+        #
+        # If Bit 1 of CV#29 has a value of one (1), then bit 4 controls function FL,
+        # otherwise bit 4 has no meaning
+
+        # Set defaults to "Off" for all functions
+        for function in allowedFunctions:
+            if not (functionsState.has_key(function)):
+                functionsState.update({function: 0})
+
+        self.logger.debug("FunctionPacket: functionsState={functionsState}".format(functionsState=functionsState))
+
+        functionPayload = "{FL}{Fn4}{Fn3}{Fn2}{Fn1}".format(FL=functionsState['FL'],
+                                                            Fn1=functionsState['Fn1'],
+                                                            Fn2=functionsState['Fn2'],
+                                                            Fn3=functionsState['Fn3'],
+                                                            Fn4=functionsState['Fn4'],
+                                                            )
+        self.logger.debug("FunctionPacket: {payload}".format(payload=functionPayload))
+        commandByte = "0b{prefix}{payload}".format(prefix = self.functionGroupOnePrefix, payload=functionPayload)
+
+        self.logger.debug(commandByte)
+
+        return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
+                                data_bytes=[commandByte],
+                                packet_type="control"))
