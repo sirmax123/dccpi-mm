@@ -132,6 +132,8 @@ class DCCPacketFactory(object):
                                 packet_type="service"))
 
     def FunctionPacket(self, locoAddress, functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }):
+        # Limited functions: only FN1-FN4
+        # To be added!
         self.logger.debug("Creating DCC Set Function Packet")
         self.logger.debug("FunctionPacket: functionsState={functionsState}".format(functionsState=functionsState))
         allowedFunctions = ["Fn1", "Fn2", "Fn3", "Fn4", "FL" ]
@@ -167,4 +169,47 @@ class DCCPacketFactory(object):
 
         return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
                                 data_bytes=[commandByte],
+                                packet_type="control"))
+
+    def SpeedDirectionPacket(self, locoAddress, speedDirection = {"speed": 0, "direction": "forward"}):
+        self.logger.debug("Creating DCC SpeedDirection Packet")
+        self.logger.debug("SpeedDirectionPacket: speedDirection={speedDirection}".format(speedDirection=speedDirection))
+        # Possible directions are "forward" and "reverse"
+        # https://www.nmra.org/sites/default/files/s-9.2.1_2012_07.pdf
+        # These two instructions have these formats:
+        # * for Reverse Operation 010DDDDD
+        # * for Forward Operation 011DDDDD
+        if speedDirection["direction"] == "forward":
+            speedPrefix = "011"
+        else:
+            speedPrefix = "010"
+        self.logger.debug("SpeedDirectionPacket: speedPrefix={speedPrefix}".format(speedPrefix=speedPrefix))
+        # A speed and direction instruction is used send information to motors connected to Multi Function Digital Decoders.
+        # Instruction "010" indicates a Speed and Direction Instruction for reverse operation and instruction "011" indicates
+        # a Speed and Direction Instruction for forward operation.
+        # In these instructions the data is used to control speed with bits 0-3 being defined exactly as in S-9.2 Section B.
+        # If Bit 1 of CV#29 has a value of one (1), then bit 4 is used as
+        # an intermediate speed step, as defined in S-9.2, Section B.
+        # If Bit 1 of CV#29 has a value of zero (0), then bit 4 shall be used to control FL3.
+        # In this mode
+        # Speed U0000 is stop
+        # speed U0001 is emergency stop
+        # speed U0010 is the first speed step
+        # speed U1111 is full speed.
+        #
+        # This provides 14 discrete speed steps in each direction.
+        #
+        # If a decoder receives a new speed step that is within one step of current speed step,
+        # the Digital Decoder may select a step half way between these two speed steps.
+        # This provides the potential to control 56 speed steps should the command station alternate speed packets.
+        #
+        # Decoders may ignore the direction information transmitted in a broadcast packet for Speed and Direction
+        # commands that do not contain stop or emergency stop information.
+
+
+        speedData = "0{speed:04b}".format(speed=speedDirection["speed"])
+        speedByte = "0b{speedPrefix}{speedData}".format(speedPrefix=speedPrefix,speedData=speedData)
+
+        return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
+                                data_bytes=[speedByte],
                                 packet_type="control"))
