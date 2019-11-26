@@ -29,17 +29,20 @@ class DCCGeneralPacket(object):
         """
         self.logger = getLogger("DCCGeneralPacket")
         self.logger.debug("DCCGeneralPacket init")
+        self.logger.debug("{data_bytes}".format(data_bytes=data_bytes))
         if packet_type == 'service':
-        # Servic e preamble is 20 b its
-            self.preamble = BitArray('0b11111111111111111111')
+        # Servic e preamble is 25 bits
+            self.preamble = BitArray('0b1111111111111111111111111')
             #self.preamble = BitArray('0b1111111111111111')
-
+            # there are no address byte in service mode packets
+            self.address_byte = BitArray(data_bytes.pop(0))
         else:
         # A command station must send a minimum of 14 preamble bits
             self.preamble = BitArray('0b1111111111111111')
+            self.address_byte = BitArray(address_byte)
+
         self.logger.debug("Preamble is set: {p}".format(p=self.preamble))
         self.packet_start_bit = BitArray('0b0')
-        self.address_byte = BitArray(address_byte)
         self.data_byte_start_bit = BitArray('0b0')
         self.data_bytes = map(BitArray, data_bytes)
         self.logger.debug("data is: {data}".format(data=self.data_bytes))
@@ -89,12 +92,14 @@ class DCCGeneralPacket(object):
         debug_packet = "{debug_packet}|".format(debug_packet=debug_packet)
         self.logger.debug("Packet: [ {packet} ]".format(packet=packet.bin))
         self.logger.debug("Packet: [ {debug_packet} ]".format(debug_packet=debug_packet))
+
         self.logger.debug("Packet: Adding address byte")
         packet.append(self.address_byte)
         debug_packet = "{debug_packet}<-Addr->".format(debug_packet=debug_packet)
         self.logger.debug("Packet: [ {packet} ]".format(packet=packet.bin))
         self.logger.debug("Packet: [ {debug_packet} ]".format(debug_packet=debug_packet))
         checksumm = self.address_byte
+
         for byte in self.data_bytes:
             self.logger.debug("Packet: Adding byte start bit")
             packet.append(self.data_byte_start_bit)
