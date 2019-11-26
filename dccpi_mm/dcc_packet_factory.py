@@ -20,74 +20,33 @@ class DCCPacketFactory(object):
         return(DCCGeneralPacket(address_byte=self.idleAddressByte,
                                 data_bytes=['0b00000000']))
 
+
+    def DCCResetPacket(self):
+        # Idlepacket
+        # Preamble        Address       Data           Checksum
+        #1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
+        self.logger.debug("Creating DCC Reset Packet")
+        return(DCCGeneralPacket(address_byte=self.broadcastAddressByte,
+                                data_bytes=['0b00000000']))
+
+    def DCCEStopPacket(self):
+        self.logger.debug("Creating DCC Emergency Packet")
+        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 0000, "direction": "forward"})
+
+    def DCCEStopPacket(self):
+        self.logger.debug("Creating DCC Emergency Stop Packet")
+        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 0001, "direction": "forward"})
+
     def DCCVerifyBitFromCVPacket(self,  bitData, bitPosition, CV, bitOperation="read"):
         self.logger.debug("Creating DCC Verify  Packet")
         # https://www.nmra.org/sites/default/files/s-9.2.1_2012_07.pdf
+        # https://www.nmra.org/sites/default/files/s-9.2.3_2012_07.pdf
         #
-        # Configuration Variable Access Instruction - Long Form
-        #
-        # The long form allows the direct manipulation of all CVs. 
-        # This instruction is valid both when the Digital Decoder has its 
-        # long address active and short address active. 
-        #
-        # Digital Decoders shall not act on this instruction 
-        # if sent to its consist address. 
-        #
-        # The format of the instructions using Direct CV addressing is:
-        #
-        # 1110CCVV 0 VVVVVVVV 0 DDDDDDDD
-        #
-        # data byte being the most significant bits of the address. 
-        # The Configuration variable being addressed is the provided 10-bit address plus 1.
-        #
-        # For example, to address CV#1 the 10 bit address is 00 00000000
-        #
-        # The defined values for Instruction type (CC) are:
-        # CC=00 Reserved for future use
-        # CC=01 Verify byte 
-        # CC=11 Write byte
-        # CC=10 Bit manipulation
-        #
-        # Type = "01" VERIFY BYTE
-        # The contents of the Configuration Variable as indicated by the 10-bit 
-        # address are compared with the data byte (DDDDDDDD). If the decoder successfully 
-        # receives this packet and the values are identical, 
-        # the Digital Decoder shall respond with the contents of the CV as the 
-        # Decoder Response Transmission, if enabled.
-        #
-
-
-        #The actual Configuration Variable desired is selected via the 10-bit address with the 2-bit address (VV) in the first
-
-        # Type = "11" WRITE BYTE
-        # The contents of the Configuration Variable as indicated by the 10-bit address are 
-        # replaced by the data byte (DDDDDDDD). 
-        # Two identical packets are needed before the decoder shall modify a configuration variable. 
-        # These two packets need not be back to back on the track. 
-        # However any other packet to the same decoder will invalidate the write operation. (This includes broadcast packets.) 
-        # If the decoder successfully receives this second identical packet, 
-        # it shall respond with a configuration variable access acknowledgment.
-        #
-        # Type = "10" BIT MANIPULATION
-        # The bit manipulation instructions use a special format for the data byte (DDDDDDDD):
-        # 111CDBBB
-        # Where BBB represents the bit position within the CV, D contains the value of the bit 
-        # to be verified or written, and C describes whether the operation is a verify bit or a write bit operation.
-        # C = "1" WRITE BIT
-        # C = "0" VERIFY BIT
-
-        # The VERIFY BIT and WRITE BIT instructions operate in a manner similar to the 
-        # VERIFY BYTE and WRITE BYTE instructions (but operates on a single bit).
-        # Using the same criteria as the VERIFY BYTE instruction, an operations mode acknowledgment will be generated in 
-        # response to a VERIFY BIT instruction if appropriate. Using the same criteria as the WRITE BYTE instruction, 
-        # a configuration variable access acknowledgment will be
-        # generated in response to the second identical WRITE BIT instruction if appropriate
-
         # Итого формат пакет без преамбулы и контроля ошибок:
         #
-        # 1110CCVV 0 VVVVVVVV 0 DDDDDDDD
+        # 0111CCVV 0 VVVVVVVV 0 DDDDDDDD
         #
-        # 111   - префикс который не меняется
+        # 0111   - префикс который не меняется
         # CC=10 - манипуляции с отдельными битами
         # VV 0 VVVVVVVV (c разделителем) - адрес  CV, 10 бит позволяют адресовать от 0 до 1023 CV
         # DDDDDDD - данные
@@ -120,18 +79,18 @@ class DCCPacketFactory(object):
         self.logger.debug("CV 8 bits = {CV_8bits}".format(CV_8bits=CV_8bits_sting))
 
         packet_bytes = []
-        packet_bytes.append("0b111010{CV_2bits:02b}".format(CV_2bits=CV_2bits))
+        packet_bytes.append("0b011110{CV_2bits:02b}".format(CV_2bits=CV_2bits))
         packet_bytes.append("0b{CV_8bits:08b}".format(CV_8bits=CV_8bits))
         packet_bytes.append("0b111{bitOperation:01b}{bitData:01b}{bitPosition:03b}".format(bitOperation=bitOperation, bitData=bitData, bitPosition=bitPosition))
         self.logger.debug(packet_bytes)
-        #return(DCCGeneralPacket(address_byte=self.idleAddressByte,
-        #                        data_bytes=['0b00000000'],
-        #                        packet_type="service"))
+
+        # address is ignored
         return(DCCGeneralPacket(address_byte=self.broadcastAddressByte,
                                 data_bytes=packet_bytes,
                                 packet_type="service"))
 
-    def FunctionPacket(self, locoAddress, functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }):
+
+    def DCCFunctionPacket(self, locoAddress, functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }):
         # Limited functions: only FN1-FN4
         # To be added!
         self.logger.debug("Creating DCC Set Function Packet")
@@ -171,7 +130,7 @@ class DCCPacketFactory(object):
                                 data_bytes=[commandByte],
                                 packet_type="control"))
 
-    def SpeedDirectionPacket(self, locoAddress, speedDirection = {"speed": 0, "direction": "forward"}):
+    def DCCSpeedDirectionPacket(self, locoAddress, speedDirection = {"speed": 0, "direction": "forward"}):
         self.logger.debug("Creating DCC SpeedDirection Packet")
         self.logger.debug("SpeedDirectionPacket: speedDirection={speedDirection}".format(speedDirection=speedDirection))
         # Possible directions are "forward" and "reverse"
@@ -213,3 +172,64 @@ class DCCPacketFactory(object):
         return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
                                 data_bytes=[speedByte],
                                 packet_type="control"))
+
+    def DCCDecoderControlPacket(self, locoAddress, action):
+        self.logger.debug("Creating DCC DecoderControlPacket Packet")
+        # The decoder control instructions are intended to 
+        # set up or modify decoder configurations.
+        # This instruction (0000CCCF) allows specific decoder features 
+        # to be set or cleared as defined by the value of D ("1" indicates set).
+        # When the decoder has decoder acknowledgment enabled, 
+        # receipt of a decoder control instruction shall be acknowledged with an operations mode acknowledgment.
+        # This instruction has the format of
+        # {instruction byte} = 0000CCCF, 
+        # or
+        # {instruction byte} = 0000CCCF DDDDDDDD
+
+        # CCC = 000  D = "0": Digital Decoder Reset - A Digital Decoder Reset shall erase all volatile memory 
+        #            (including and speed and direction data), and return to its initial power up 
+        #            state as defined in S- 9.2.4 section A. Command Stations shall not send packets to addresses 112-127 
+        #            for 10 packet times following a Digital Decoder Reset. This is to ensure that the decoder does not 
+        #            start executing service mode instruction packets as operations mode packets 
+        #            (Service Mode instruction packets have a short address in the range of 112 to 127 decimal.)
+        #
+        #            D = "1": Hard Reset - Configuration Variables 29, 31 and 32 are reset to its factory default 
+        #            conditions, CV#19 is set to "00000000" and a Digital Decoder reset (as in the above instruction) 
+        #            shall be performed.
+        #
+        # CCC = 001  Factory Test Instruction - This instruction is used by manufacturers to test decoders at the factory. 
+        #            It must not be sent by any command station during normal operation. 
+        #            This instruction may be a multi-byte instruction.
+        # CCC = 010  Reserved for future use
+
+        # CCC = 011 Set Decoder Flags (see below) https://www.nmra.org/sites/default/files/s-9.2.1_2012_07.pdf
+        # CCC = 100 Reserved for future use
+        # CCC = 101 Set Advanced Addressing (CV#29 bit 5)
+        # CCC = 110 Reserved for future use
+        # CCC = 111 D= "1": Decoder Acknowledgment Request
+
+        # TODO!
+        # actions =  {
+        #    "reset"                : "0000",
+        #    "hardReset"            : "0001",
+        #    "setFlags"             : "011",
+        #    "setAdvancedAddressing": "101",
+        #    "acknowledgmentRequest": "1111"
+        #}
+
+        actions =  {
+            "acknowledgmentRequest": "1111"
+        }
+
+        if actions.has_key(action):
+            decoderControlPacketByte = "0b0000{actionData}".format(actionData=actions[action])
+            return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
+                                    data_bytes=[decoderControlPacketByte]))
+        else:
+            self.logger.debug("Uncknown or not implemented action, sending Idle packet")
+            return(DCCGeneralPacket(address_byte=self.idleAddressByte,
+                                    data_bytes=['0b00000000']))
+    def DCCConsistControlPacket(self):
+    # Not implemented
+        return(DCCGeneralPacket(address_byte=self.idleAddressByte,
+                                data_bytes=['0b00000000']))
