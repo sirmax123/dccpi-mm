@@ -35,7 +35,7 @@ class DCCControlStation(object):
         Method reads command from queues and sends on track.
         IF emergency_queue is NOT EMPTY eStop (emergency stop) packet will be saend on track
         """
-        self.logger.debug("Got DCC Packet from queue: {command_json}".format(command_json=command))
+        self.logger.debug("Got DCC Packet from queue: {command_json}".format(command_json=command_json))
         command = json.loads(command_json)
         try:
             if command['action'] == 'move':
