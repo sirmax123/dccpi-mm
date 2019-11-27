@@ -24,7 +24,7 @@ from. dcc_hardware        import DCCHardware
 from .dcc_packet_factory  import DCCPacketFactory
 from .dcc_service_mode    import DCCServicePacketFactory
 from .dcc_redis_queue     import RedisQueue
-
+from .dcc_loco_control    import DCCKeyboardLocoControl
 
 __all__ = [
         'DCCControlStation',
@@ -32,6 +32,7 @@ __all__ = [
         'DCCHardware',
         'DCCPacketFactory',
         'DCCServicePacketFactory',
-        'RedisQueue'
+        'RedisQueue',
+        'DCCKeyboardLocoControl'
     ]
 
