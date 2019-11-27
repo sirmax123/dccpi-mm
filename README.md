@@ -1,5 +1,5 @@
 # dccpi-mm
-My own version of DCC for RusperryPy
+My own version of DCC for Raspberry 
 
 
 Minumal example:
