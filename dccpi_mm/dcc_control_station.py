@@ -1,41 +1,69 @@
-import sys
-import threading
+import json
 import os
-import Queue
+import redis
+import sys
 import time
-#from .dcc_packet_factory import DCCPacketFactory
 
 #import dcc_rpi_encoder_c
 from .dcc_logger         import getLogger
 from .dcc_packet_factory import DCCPacketFactory
 from .dcc_hardware       import DCCHardware
+from .dcc_redis_queue    import RedisQueue
 
 
+class DCCControlStation(object):
+    """
+    DCCControlStation class reads commands from queue and sends on track.
+    This basic implementation does not support tornout control, track-busy-sensors etc,
+    """
+    def __init__(self, commands_queue, emergency_queue, **redis_kwargs):
 
-class DCCControlStation(threading.Thread):
-    def __init__(self,queue):
+        self.packet_factory = DCCPacketFactory()
+        self.idle_packet = self.packet_factory.DCCIdlePacket().to_bit_string()
+        self.e_stop_packet = self.packet_factory.DCCEStopPacket().to_bit_string()
+        self.commands_queue = RedisQueue(commands_queue, **redis_kwargs)
+        self.emergency_queue = RedisQueue(emergency_queue, **redis_kwargs)
 
-        threading.Thread.__init__(self)
-        self.queue = queue
+        self.hardware = DCCHardware()
+        self.hardware.setup()
 
         self.logger = getLogger('DCCControlStation')
         self.logger.debug('DCCControlStation init')
 
-        self.packet_factory  = DCCPacketFactory()
-        self.idle_packet = self.packet_factory.DCCIdlePacket().to_bit_string()
+    def decode_command(self, command_json):
+        """
+        Method reads command from queues and sends on track.
+        IF emergency_queue is NOT EMPTY eStop (emergency stop) packet will be saend on track
+        """
+        self.logger.debug("Got DCC Packet from queue: {command_json}".format(command_json=command))
+        command = json.loads(command_json)
+        try:
+            if command['action'] == 'move':
+                self.hardware.send_bit_string(self.packet_factory.DCCSpeedDirectionPacket(
+                            locoAddress = command['loco_address'],
+                            speedDirection = {
+                                "speed": command['speed'],
+                                "direction": command['direction']}).to_bit_string(), 3)
+            elif command['action'] == 'functon':
+                self.hardware.send_bit_string(self.packet_factory.DCCFunctionPacket(locoAddress = command['loco_address'],
+                                            functionsState = command['functions_state']).to_bit_string(), 3)
 
-        self.station_hardware = DCCHardware()
-        print(self.idle_packet)
+        except KeyboardInterrupt:
+            sys.exit(1)
+        except Exception  as Ex:
+            # ignore errors
+            self.logger.debug(Ex)
 
-
-    def run(self):
-        # Endless loop
-        self.logger.debug("Starting loop")
+    def main_loop(self):
         while True:
-            if not self.queue.empty():
-               self.dccPacket = self.queue.get()
-               self.logger.debug("Got DCC Packet from queue: {packet}".format(packet=self.packet))
-            else:
-                self.logger.debug("Empty queue, sending IDLE DCC Packet")
-                self.station_hardware.send_bit_string(self.idle_packet, 1)
-                time.sleep(1)
+            while  not self.emergency_queue.empty():
+                emergency_command = self.emergency_queue.get()
+                self.looger.debug("Emergency Command = {emergency_command}".format(emergency_command=emergency_command))
+                self.hardware.send_bit_string(self.e_stop_packet, 3)
+
+            if not self.commands_queue.empty():
+                command_json = self.commands_queue.get()
+                self.logger.debug("Command = {command_json}".format(command_json=command_json))
+                self.decode_command(command_json)
+
+            self.hardware.send_bit_string(self.idle_packet, 1)
