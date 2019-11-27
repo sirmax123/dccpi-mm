@@ -58,7 +58,7 @@ class DCCControlStation(object):
         while True:
             while  not self.emergency_queue.empty():
                 emergency_command = self.emergency_queue.get()
-                self.looger.debug("Emergency Command = {emergency_command}".format(emergency_command=emergency_command))
+                self.logger.debug("Emergency Command = {emergency_command}".format(emergency_command=emergency_command))
                 self.hardware.send_bit_string(self.e_stop_packet, 3)
 
             if not self.commands_queue.empty():
