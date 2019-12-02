@@ -31,8 +31,8 @@ class DCCKeyboardLocoControl(object):
         self.loco_address = loco_address
         self.loco_direction = 'undef'
         # Prededefined keys
-        self.UP_SPEED_KEYS = ('up')
-        self.DOWN_SPEED_KEYS = ('down')
+        self.INCREASE_SPEED_KEYS = ('up')
+        self.DECREASE_SPEED_KEYS = ('down')
 
         self.logger = getLogger("DCCLococControl")
         self.logger.debug('Init')
@@ -49,7 +49,7 @@ class DCCKeyboardLocoControl(object):
         """
         Simple key handler
         """
-        if key in self.UP_SPEED_KEYS:
+        if key in self.INCREASE_SPEED_KEYS:
             # Set direction if not defined.
             # Direction can be changed only if speed = 0
             if ( self.loco_speed == 0 ) and ( self.loco_direction != 'forward' ):
@@ -60,7 +60,7 @@ class DCCKeyboardLocoControl(object):
             else:
                 pass
 
-        if key in self.DOWN_SPEED_KEYS:
+        if key in self.DECREASE_SPEED_KEYS:
             # Set direction if not defined
             if ( self.loco_speed == 0 ) and ( self.loco_direction != 'reverse' ):
                 self.loco_direction = 'reverse'
