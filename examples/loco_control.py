@@ -6,17 +6,16 @@ import urwid
 LOCO_ADDRESS = 9
 COMMANDS_QUEUE = "dcc_command"
 EMERGENCY_QUEUE = "dcc_emergency"
-REDIS_ARGS =  {
+REDIS_ARGS = {
     'host': 'localhost',
     'port': 6379,
     'db': 0
 }
 
 
+loco_control = dccpi.DCCKeyboardLocoControl(LOCO_ADDRESS, COMMANDS_QUEUE,
+                                            EMERGENCY_QUEUE, **REDIS_ARGS)
 
-
-
-loco_control = dccpi.DCCKeyboardLocoControl(LOCO_ADDRESS, COMMANDS_QUEUE, EMERGENCY_QUEUE, **REDIS_ARGS)
 
 def key_handler(key):
     if key in ('q', 'Q'):
@@ -29,12 +28,14 @@ def key_handler(key):
                                     loco_functions_FL=command_functions['functions_state']['FL'],
                                     direction=command_move['direction']))
 
+
 palette = [
     ('banner', '', '', '', '#ffa', '#60d'),
     ('streak', '', '', '', 'g50', '#60a'),
     ('inside', '', '', '', 'g38', '#808'),
     ('outside', '', '', '', 'g27', '#a06'),
-    ('bg', '', '', '', 'g7', '#d06'),]
+    ('bg', '', '', '', 'g7', '#d06'),
+]
 
 placeholder = urwid.SolidFill()
 
