@@ -31,6 +31,8 @@ class DCCKeyboardLocoControl(object):
         self.loco_address = loco_address
         self.loco_direction = 'undef'
         # Prededefined keys
+        self.UP_SPEED_KEYS = ('up')
+        self.DECREASE_SPEED_KEYS = ('down')
         self.INCREASE_SPEED_KEYS = ('up')
         self.DECREASE_SPEED_KEYS = ('down')
 
@@ -78,12 +80,13 @@ class DCCKeyboardLocoControl(object):
 
         # TODO: Move function keys to predef. constatn? not sure.
         if key in ('0', '1', '2', '3', '4'):
+            print(key)
             if key in ('0'):
                 # FL (Forward Lamp) is spetial case.
                 # (value + 1) % 2 inverts function value on each step
                 self.loco_functions['FL'] = (self.loco_functions['FL'] + 1) % 2
             else:
-                self.loco_functions[key] = (self.loco_functions[key] + 1) % 2
+                self.loco_functions[key.decode("utf-8")] = (self.loco_functions[key] + 1) % 2
 
         command_function = {
             'action':          'functon',
