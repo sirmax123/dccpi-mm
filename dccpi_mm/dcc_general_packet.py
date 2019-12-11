@@ -1,10 +1,10 @@
 import sys
 from bitstring import BitArray
-from dcc_logger import getLogger
+from .dcc_logger import getLogger
 
 
 # packet example 111111111|0|00000011|0|01001000|0|01001011|1
-# preamble:    111111111 (14 or more)
+# preamble:      111111111 (14 or more)
 # byte startbit  0
 # address byte   00000011
 # separator bit  0
