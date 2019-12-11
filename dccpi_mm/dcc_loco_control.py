@@ -56,21 +56,17 @@ class DCCKeyboardLocoControl(object):
             # Direction can be changed only if speed = 0
             if ( self.loco_speed == 0 ) and ( self.loco_direction != 'forward' ):
                 self.loco_direction = 'forward'
-            # Max speed is 14
-            elif (self.loco_speed < 14):
-                self.loco_speed = self.loco_speed + 1
             else:
-                pass
+                # Max speed is 14
+                self.loco_speed = min(self.loco_speed + 1, 14)
 
         if key in self.DECREASE_SPEED_KEYS:
             # Set direction if not defined
             if ( self.loco_speed == 0 ) and ( self.loco_direction != 'reverse' ):
                 self.loco_direction = 'reverse'
-            elif ( self.loco_speed > -14 ):
-                self.loco_speed = self.loco_speed - 1
             else:
-                pass
-
+                # Min speed is 0
+                self.loco_speed = max(self.loco_speed - 1 , 0)
         command_move = {
             'action':       'move',
             'loco_address': self.loco_address,
