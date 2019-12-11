@@ -31,11 +31,11 @@ class DCCPacketFactory(object):
 
     def DCCEStopPacket(self):
         self.logger.debug("Creating DCC Emergency Packet")
-        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 0000, "direction": "forward"})
+        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 0, "direction": "forward"})
 
     def DCCEStopPacket(self):
         self.logger.debug("Creating DCC Emergency Stop Packet")
-        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 0001, "direction": "forward"})
+        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 1, "direction": "forward"})
 
     def DCCVerifyBitFromCVPacket(self,  bitData, bitPosition, CV, bitOperation="read"):
         self.logger.debug("Creating DCC Verify  Packet")
@@ -90,7 +90,15 @@ class DCCPacketFactory(object):
                                 packet_type="service"))
 
 
-    def DCCFunctionPacket(self, locoAddress, functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }):
+    def DCCFunctionPacket(self, locoAddress, functionsState = None):
+        """
+        Build Function Control Packet
+        """
+        if functionsState is None:
+            functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }
+        else:
+            functionsState = functionsState.copy()
+
         # Limited functions: only FN1-FN4
         # To be added!
         self.logger.debug("Creating DCC Set Function Packet")
@@ -110,7 +118,7 @@ class DCCPacketFactory(object):
 
         # Set defaults to "Off" for all functions
         for function in allowedFunctions:
-            if not (functionsState.has_key(function)):
+            if function not in functionsState:
                 functionsState.update({function: 0})
 
         self.logger.debug("FunctionPacket: functionsState={functionsState}".format(functionsState=functionsState))
@@ -123,7 +131,6 @@ class DCCPacketFactory(object):
                                                             )
         self.logger.debug("FunctionPacket: {payload}".format(payload=functionPayload))
         commandByte = "0b{prefix}{payload}".format(prefix = self.functionGroupOnePrefix, payload=functionPayload)
-
         self.logger.debug(commandByte)
 
         return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
@@ -221,7 +228,7 @@ class DCCPacketFactory(object):
             "acknowledgmentRequest": "1111"
         }
 
-        if actions.has_key(action):
+        if actions in actions:
             decoderControlPacketByte = "0b0000{actionData}".format(actionData=actions[action])
             return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
                                     data_bytes=[decoderControlPacketByte]))
