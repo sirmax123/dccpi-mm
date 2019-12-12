@@ -16,15 +16,14 @@
 
     You should have received a copy of the GNU General Public License
     along with "dccpi".  If not, see <http://www.gnu.org/licenses/>.
-"""
-
 from .dcc_control_station import DCCControlStation
-from .dcc_general_packet  import DCCGeneralPacket
-from. dcc_hardware        import DCCHardware
-from .dcc_packet_factory  import DCCPacketFactory
-from .dcc_service_mode    import DCCServicePacketFactory
-from .dcc_redis_queue     import RedisQueue
-from .dcc_loco_control    import DCCKeyboardLocoControl
+from .dcc_general_packet import DCCGeneralPacket
+from. dcc_hardware import DCCHardware
+from .dcc_packet_factory import DCCPacketFactory
+from .dcc_service_mode import DCCServicePacketFactory
+from .dcc_redis_queue import RedisQueue
+from .dcc_loco_control import DCCKeyboardLocoControl
+"""
 
 __all__ = [
         'DCCControlStation',
@@ -35,4 +34,3 @@ __all__ = [
         'RedisQueue',
         'DCCKeyboardLocoControl'
     ]
-
