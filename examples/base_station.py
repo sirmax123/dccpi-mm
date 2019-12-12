@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 
 # Simple controlstation example
@@ -15,5 +15,5 @@ REDIS_ARGS = {
 
 
 control_station = dccpi.DCCControlStation(COMMANDS_QUEUE, EMERGENCY_QUEUE,
-                                          **REDIS_ARGS)
+                                          idle_packets_count=20, **REDIS_ARGS)
 control_station.main_loop()

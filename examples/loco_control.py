@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import dccpi_mm as dccpi
 import urwid
 
-LOCO_ADDRESS = 9
+LOCO_ADDRESS = 5
 COMMANDS_QUEUE = "dcc_command"
 EMERGENCY_QUEUE = "dcc_emergency"
 REDIS_ARGS = {
@@ -24,9 +24,9 @@ def key_handler(key):
 
     command_move, command_functions = loco_control.key_handler(key)
     txt.set_text("Loco Speed = {speed} Functions: FL={loco_functions_FL} direction={direction}".format(
-                                    speed=command_move['speed'],
-                                    loco_functions_FL=command_functions['functions_state']['FL'],
-                                    direction=command_move['direction']))
+                  speed=command_move['speed'],
+                  loco_functions_FL=command_functions['functions_state']['FL'],
+                  direction=command_move['direction']))
 
 
 palette = [
@@ -51,7 +51,9 @@ txt = urwid.Text(u" Loco Control  ", align='left')
 
 
 streak = urwid.AttrMap(txt, 'streak')
-pile = loop.widget.base_widget # .base_widget skips the decorations
+
+# .base_widget skips the decorations
+pile = loop.widget.base_widget
 for item in [outside, inside, streak, inside, outside]:
     pile.contents.append((item, pile.options()))
 
