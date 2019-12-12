@@ -35,6 +35,14 @@ class DCCKeyboardLocoControl(object):
         self.DECREASE_SPEED_KEYS = ('down')
         self.INCREASE_SPEED_KEYS = ('up')
         self.DECREASE_SPEED_KEYS = ('down')
+        # Lists of keys to activate/deactivate functions
+        self.FUNCTION_KEY_MAPPING = {
+            'FL': ('0'),
+            '1':  ('1'),
+            '2':  ('2'),
+            '3':  ('3'),
+            '4':  ('4')
+        }
 
         self.logger = getLogger("DCCLococControl")
         self.logger.debug('Init')
@@ -67,31 +75,30 @@ class DCCKeyboardLocoControl(object):
             else:
                 # Min speed is 0
                 self.loco_speed = max(self.loco_speed - 1 , 0)
-        command_move = {
-            'action':       'move',
-            'loco_address': self.loco_address,
-            'direction':    self.loco_direction,
-            'speed':        abs(self.loco_speed)
-        }
 
-        # TODO: Move function keys to predef. constatn? not sure.
-        if key in ('0', '1', '2', '3', '4'):
-            print(key)
-            if key in ('0'):
-                # FL (Forward Lamp) is spetial case.
-                # (value + 1) % 2 inverts function value on each step
-                self.loco_functions['FL'] = (self.loco_functions['FL'] + 1) % 2
-            else:
-                self.loco_functions[key.decode("utf-8")] = (self.loco_functions[key] + 1) % 2
+        if (key in self.DECREASE_SPEED_KEYS) or (key in self.INCREASE_SPEED_KEYS):
+            command = {
+                'action':       'move',
+                'loco_address': self.loco_address,
+                'direction':    self.loco_direction,
+                'speed':        abs(self.loco_speed)
+            }
+            self.commands_queue.put(json.dumps(command))
+            return command
 
-        command_function = {
-            'action':          'functon',
-            'loco_address':    self.loco_address,
-            'functions_state': self.loco_functions
-        }
-        if self.loco_direction in ('forward', 'reverse'):
-            self.commands_queue.put(json.dumps(command_function))
-            self.commands_queue.put(json.dumps(command_move))
+        # Key is not in speed change keys, need to check functions key
+        for function_name, function_keys in self.FUNCTION_KEY_MAPPING.items():
+            if key in function_keys:
+                # Invert function state if function key is pressed.
+                self.loco_functions['function_name'] = not self.loco_functions['function_name']
 
-        return command_move, command_function
+            command = {
+                'action':          'functon',
+                'loco_address':    self.loco_address,
+                'functions_state': int(self.loco_functions)
+            }
+
+        self.commands_queue.put(json.dumps(command))
+
+        return command
 
