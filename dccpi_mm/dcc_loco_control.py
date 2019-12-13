@@ -44,7 +44,7 @@ class DCCKeyboardLocoControl(object):
             '4':  ('4')
         }
 
-        self.logger = getLogger("DCCLococControl")
+        self.logger = getLogger("DCCKeyboardLocoControl")
         self.logger.debug('Init')
 
     def exit(self):
@@ -59,6 +59,7 @@ class DCCKeyboardLocoControl(object):
         """
         Simple key handler
         """
+        self.logger.debug(key)
         if key in self.INCREASE_SPEED_KEYS:
             # Set direction if not defined.
             # Direction can be changed only if speed = 0
@@ -74,7 +75,7 @@ class DCCKeyboardLocoControl(object):
                 self.loco_direction = 'reverse'
             else:
                 # Min speed is 0
-                self.loco_speed = max(self.loco_speed - 1 , 0)
+                self.loco_speed = max(self.loco_speed - 1 , -14)
 
         if (key in self.DECREASE_SPEED_KEYS) or (key in self.INCREASE_SPEED_KEYS):
             command = {
@@ -90,12 +91,12 @@ class DCCKeyboardLocoControl(object):
         for function_name, function_keys in self.FUNCTION_KEY_MAPPING.items():
             if key in function_keys:
                 # Invert function state if function key is pressed.
-                self.loco_functions['function_name'] = not self.loco_functions['function_name']
+                self.loco_functions[function_name] = not self.loco_functions[function_name]
 
             command = {
                 'action':          'functon',
                 'loco_address':    self.loco_address,
-                'functions_state': int(self.loco_functions)
+                'functions_state': self.loco_functions
             }
 
         self.commands_queue.put(json.dumps(command))
