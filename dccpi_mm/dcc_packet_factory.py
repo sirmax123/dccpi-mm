@@ -98,6 +98,8 @@ class DCCPacketFactory(object):
             functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }
         else:
             functionsState = functionsState.copy()
+            for k in functionsState:
+                functionsState[k] = int(functionsState[k])
 
         # Limited functions: only FN1-FN4
         # To be added!
