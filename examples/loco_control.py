@@ -17,16 +17,35 @@ loco_control = dccpi.DCCKeyboardLocoControl(LOCO_ADDRESS, COMMANDS_QUEUE,
                                             EMERGENCY_QUEUE, **REDIS_ARGS)
 
 
+
+FL = 0
+direction = 'undef'
+speed = 0
+
 def key_handler(key):
+
+    global FL
+    global direction
+    global spped
+
     if key in ('q', 'Q'):
         loco_control.exit()
         raise urwid.ExitMainLoop()
 
-    command_move, command_functions = loco_control.key_handler(key)
+    speed = 0
+    command  = loco_control.key_handler(key)
+
+    if command['action'] == "move":
+        speed = command["speed"]
+        direction = command['direction']
+
+    if command['action'] == "functon":
+        FL = command['functions_state']['FL']
+
     txt.set_text("Loco Speed = {speed} Functions: FL={loco_functions_FL} direction={direction}".format(
-                  speed=command_move['speed'],
-                  loco_functions_FL=command_functions['functions_state']['FL'],
-                  direction=command_move['direction']))
+                  speed=speed,
+                  loco_functions_FL=FL,
+                  direction=direction))
 
 
 palette = [
