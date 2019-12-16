@@ -14,6 +14,9 @@ REDIS_ARGS = {
 }
 
 
-control_station = dccpi.DCCControlStation(COMMANDS_QUEUE, EMERGENCY_QUEUE,
-                                          idle_packets_count=20, **REDIS_ARGS)
+# Create redisq queue reader (in furure may be replaced with ZeroMQ queue or any other
+# queue implementation.
+commands_queue_reader = dccpi.RedisQueueReader(COMMANDS_QUEUE, EMERGENCY_QUEUE, **REDIS_ARGS)
+
+control_station = dccpi.DCCControlStation(commands_queue_reader, idle_packets_count=20)
 control_station.main_loop()

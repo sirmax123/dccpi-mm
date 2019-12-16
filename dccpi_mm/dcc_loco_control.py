@@ -2,10 +2,11 @@ import redis
 import time
 import json
 
-from .dcc_logger         import getLogger
+from .dcc_logger import getLogger
 from .dcc_packet_factory import DCCPacketFactory
-from .dcc_hardware       import DCCHardware
-from .dcc_redis_queue    import RedisQueue
+from .dcc_hardware import DCCHardware
+from .dcc_redis_queue import RedisQueue
+
 
 class DCCKeyboardLocoControl(object):
     """
@@ -14,14 +15,14 @@ class DCCKeyboardLocoControl(object):
     By default arrow keys up/down areused for speed control,
     and numbers are used to control functions
     """
-    def __init__(self, loco_address, commands_queue_name, 
+    def __init__(self, loco_address, commands_queue_name,
                  emergency_queue_name, **redis_kwargs):
 
         self.lolco_address = loco_address
         self.commands_queue = RedisQueue(commands_queue_name, **redis_kwargs)
         self.emergency_queue = RedisQueue(emergency_queue_name, **redis_kwargs)
         self.loco_functions = {
-            'FL' : 0,
+            'FL':  0,
             "Fn1": 0,
             "Fn2": 0,
             "Fn3": 0,
@@ -43,8 +44,8 @@ class DCCKeyboardLocoControl(object):
             '3':  ('3'),
             '4':  ('4')
         }
-
-        self.logger = getLogger("DCCKeyboardLocoControl")
+        # used to avoid hardcoding class name
+        self.logger = getLogger(type(self).__name__)
         self.logger.debug('Init')
 
     def exit(self):
@@ -63,7 +64,7 @@ class DCCKeyboardLocoControl(object):
         if key in self.INCREASE_SPEED_KEYS:
             # Set direction if not defined.
             # Direction can be changed only if speed = 0
-            if ( self.loco_speed == 0 ) and ( self.loco_direction != 'forward' ):
+            if (self.loco_speed == 0) and (self.loco_direction != 'forward'):
                 self.loco_direction = 'forward'
             else:
                 # Max speed is 14
@@ -71,11 +72,11 @@ class DCCKeyboardLocoControl(object):
 
         if key in self.DECREASE_SPEED_KEYS:
             # Set direction if not defined
-            if ( self.loco_speed == 0 ) and ( self.loco_direction != 'reverse' ):
+            if (self.loco_speed == 0) and (self.loco_direction != 'reverse'):
                 self.loco_direction = 'reverse'
             else:
                 # Min speed is 0
-                self.loco_speed = max(self.loco_speed - 1 , -14)
+                self.loco_speed = max(self.loco_speed - 1, -14)
 
         if (key in self.DECREASE_SPEED_KEYS) or (key in self.INCREASE_SPEED_KEYS):
             command = {
@@ -102,4 +103,3 @@ class DCCKeyboardLocoControl(object):
         self.commands_queue.put(json.dumps(command))
 
         return command
-
