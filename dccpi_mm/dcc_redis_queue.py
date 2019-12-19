@@ -1,4 +1,5 @@
 import redis
+import collections
 from .dcc_logger import getLogger
 
 
@@ -40,9 +41,10 @@ class RedisQueue(object):
         return self.get(False)
 
 
-class RedisQueueReader(object):
+class RedisQueueReader(collections.abc.Iterator):
     """
-    This class is designed to return command from redis queue
+    This class is designed to return command from redis queue,
+    operates as itterator
     """
     def __init__(self, commands_queue, emergency_queue,  **redis_kwargs):
 
