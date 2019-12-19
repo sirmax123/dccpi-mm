@@ -23,7 +23,7 @@ class DCCPacketFactory(object):
 
     def DCCResetPacket(self):
         # Idlepacket
-        # Preamb le        Address       Data           Checksum
+        # Preamble         Addres s       Data           Checksum
         # 1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
         self.logger.debug("Creating DCC Reset Packet")
         return(DCCGeneralPacket(address_byte=self.broadcastAddressByte,
@@ -157,7 +157,9 @@ class DCCPacketFactory(object):
         # Refactoring: using namedtuple instead of dicts.
         # Now I had to support both "old" dicts and "new"
         # namedtuples.
-        if not isinstance(speedDirection, dict):
+        # Check if object can be converted to dict: has method
+        # _asdict()
+        if callable(getattr(speedDirection, '_asdict', None)):
             speedDirection = speedDirection._asdict()
 
         # Possible directions are "forward" and "reverse"
@@ -255,7 +257,7 @@ class DCCPacketFactory(object):
             "acknowledgmentRequest": "1111"
         }
 
-        if actions in actions:
+        if action in actions:
             decoderControlPacketByte = "0b0000{actionData}".format(actionData=actions[action])
             return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
                                     data_bytes=[decoderControlPacketByte]))
