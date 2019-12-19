@@ -54,6 +54,10 @@ class DCCControlStation(object):
             command = json.loads(command_json)
             self.logger.info(command)
 
+            # For 'normal operations' there are 2 types of packets:
+            # 'move':     change speed and/or direction
+            # 'function': change function state
+            # Other commnads are interpritaded as 'idle'
             if command['action'] == 'move':
                 speed_direction = SpeedDirection(
                     command['speed'],
@@ -61,6 +65,7 @@ class DCCControlStation(object):
                 )
                 packet = self.packet_factory.DCCSpeedDirectionPacket(locoAddress=command['loco_address'],
                                                                      speedDirection=speed_direction)
+
                 self.hardware.send_bit_string(packet.to_bit_string(), 1)
 
             elif command['action'] == 'functon':
@@ -74,22 +79,18 @@ class DCCControlStation(object):
 
                 packet = self.packet_factory.DCCFunctionPacket(locoAddress=command['loco_address'],
                                                                functionsState=functions_state)
+                self.hardware.send_bit_string(packet.to_bit_string(), 1)
 
-            self.hardware.send_bit_string(packet.to_bit_string(), 1)
+            else:
+                # If command is detected but it is not move of functiond
+                # just ignore it and send idle packet(s)
+                self.hardware.send_bit_string(self.idle_packet, self.idle_packets_count)
 
-        except json.decoder.JSONDecodeError as Ex:
-            logger.debug(Ex)
-            raise Ex
         except KeyboardInterrupt:
             sys.exit(1)
-#        except Exception as Ex:
-#            # ignore errors
-#            self.logger.debug(Ex)
-#            raise Ex
-#            sys.exit(2)
 
     def main_loop(self):
-        # Edless loop reads commands from queue
+        # Endless loop reads commands from queue
         for command in self.commands_queue_reader:
             # eStop command
             if command == "emergency_stop":
@@ -105,44 +106,3 @@ class DCCControlStation(object):
                 self.logger.info("Command = {command}".format(command=command))
                 self.decode_command(command)
 
-
-class RedisQueueReader(object):
-    """
-    This class is designed to return command from redis queue
-    """
-    def __init__(self, commands_queue, emergency_queue,  **redis_kwargs):
-
-        self.logger = getLogger('QueueReader')
-        self.commands_queue = RedisQueue(commands_queue, **redis_kwargs)
-        self.emergency_queue = RedisQueue(emergency_queue, **redis_kwargs)
-
-    def __iter__(self):
-        return self
-
-    def clean_queue(self):
-        """
-        No need to read old packets saved in queue before station is started.
-        This method just reads everething and removes from queue.
-        """
-        self.logger.info("Running Cleanup")
-        while not self.emergency_queue.empty():
-            emergency_command = self.emergency_queue.get()
-            self.logger.info("Cleaning Emergency Queue: {emergency_command}".format(command_json=command_json))
-
-        while not self.commands_queue.empty():
-            command_json = self.commands_queue.get().decode('utf-8')
-            self.logger.info("Cleaning Commands Queue: {command_json}".format(command_json=command_json))
-
-    def __next__(self):
-        while True:
-            if not self.emergency_queue.empty():
-                emergency_command = self.emergency_queue.get()
-                self.logger.info("Emergency Command = {emergency_command}".format(emergency_command=emergency_command))
-                return "emergency_stop"
-
-            elif not self.commands_queue.empty():
-                command_json = self.commands_queue.get().decode('utf-8')
-                self.logger.info("Command = {command_json}".format(command_json=command_json))
-                return command_json
-            else:
-                return "idle"
