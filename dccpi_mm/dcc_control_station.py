@@ -94,8 +94,7 @@ class DCCControlStation(object):
         for command in self.commands_queue_reader:
             # eStop command
             if command == "emergency_stop":
-                self.logger.info("Emergency Command = {emergency_command}".format(
-                                  emergency_command=emergency_command))
+                self.logger.info("Emergency Command = {command}".format(command=command))
                 self.hardware.send_bit_string(self.e_stop_packet, 3)
             # Idle commnads: sends idle packet with no commands
             # used for power delivery
