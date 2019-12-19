@@ -30,7 +30,7 @@ class DCCKeyboardLocoControl(object):
         }
         self.loco_speed = 0
         self.loco_address = loco_address
-        self.loco_direction = 'undef'
+        self.loco_direction = None
         # Prededefined keys
         self.UP_SPEED_KEYS = ('up')
         self.DECREASE_SPEED_KEYS = ('down')
