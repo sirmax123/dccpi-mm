@@ -23,7 +23,7 @@ class DCCPacketFactory(object):
 
     def DCCResetPacket(self):
         # Idlepacket
-        # Preamble         Addres s       Data           Checksum
+        # Preamble         Address        Data           Checksum
         # 1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
         self.logger.debug("Creating DCC Reset Packet")
         return(DCCGeneralPacket(address_byte=self.broadcastAddressByte,
