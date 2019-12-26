@@ -5,7 +5,7 @@ My own version of DCC for Raspberry
 ```
 import dccpi_mm as dccpi
 a = dccpi.DCCEncoder()
-print a
+print(a)
 a.setup()
 a.send_bit_string('110011001010', 10000)
 ```
