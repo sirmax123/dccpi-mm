@@ -12,7 +12,7 @@ English, Russian and Ukrainian languages are acceptable for issues and code revi
 * Web based clients (TODO)
 * Accessories decoders(controlles)
 ** Turnout controller with sensors (ESP32 based, in progress)
-* Locomotive/mobile decoders (controllers) 
+* Locomotive/mobile decoders (controllers)
 
 ## Project Structure
 ```
