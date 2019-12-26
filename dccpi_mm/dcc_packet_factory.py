@@ -2,6 +2,7 @@ from .dcc_logger import getLogger
 from .dcc_general_packet import DCCGeneralPacket
 from bitstring import BitArray
 
+
 class DCCPacketFactory(object):
     def __init__(self, address_byte='0b1111111'):
         self.logger = getLogger("DCCPacketFactory")
@@ -14,28 +15,27 @@ class DCCPacketFactory(object):
 
     def DCCIdlePacket(self):
         # Idlepacket
-        # Preamble        Address       Data           Checksum
-        #1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
+        # Preamble         Address       Data           Checksum
+        # 1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
         self.logger.debug("Creating DCC Idle Packet")
         return(DCCGeneralPacket(address_byte=self.idleAddressByte,
                                 data_bytes=['0b00000000']))
 
-
     def DCCResetPacket(self):
         # Idlepacket
-        # Preamble        Address       Data           Checksum
-        #1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
+        # Preamble         Address        Data           Checksum
+        # 1111111111 | 0 | 11111111 | 0 | 00000000 | 0 | 11111111 1
         self.logger.debug("Creating DCC Reset Packet")
         return(DCCGeneralPacket(address_byte=self.broadcastAddressByte,
                                 data_bytes=['0b00000000']))
 
     def DCCEStopPacket(self):
         self.logger.debug("Creating DCC Emergency Packet")
-        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 0000, "direction": "forward"})
+        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection={"speed": 0, "direction": "forward"})
 
     def DCCEStopPacket(self):
         self.logger.debug("Creating DCC Emergency Stop Packet")
-        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection = {"speed": 0001, "direction": "forward"})
+        return self.DCCSpeedDirectionPacket(locoAddress=0, speedDirection={"speed": 1, "direction": "forward"})
 
     def DCCVerifyBitFromCVPacket(self,  bitData, bitPosition, CV, bitOperation="read"):
         self.logger.debug("Creating DCC Verify  Packet")
@@ -57,13 +57,15 @@ class DCCPacketFactory(object):
         #     BBB - позиция бита (от 0 до 7)
         #
 
-
         if bitOperation == "write":
             bitOperation = 1
         else:
             bitOperation = 0
 
-        self.logger.debug("CV = {CV}, bitPosition = {bitPosition:03b}, bitOperation={bitOperation:01b}, bitData={bitData:01b}".format(CV=CV, bitPosition=bitPosition, bitOperation=bitOperation, bitData=bitData))
+        self.logger.debug("CV = {CV}, bitPosition = {bitPosition:03b}, bitOperation={bitOperation:01b}, bitData={bitData:01b}".format(CV=CV,
+                                                                                                                                      bitPosition=bitPosition,
+                                                                                                                                      bitOperation=bitOperation,
+                                                                                                                                      bitData=bitData))
         # CV numbers are 1, 2 ... etc, but CV addresses are 0, 1 ...
         CV = CV - 1
         # CV is 10 bit
@@ -81,7 +83,9 @@ class DCCPacketFactory(object):
         packet_bytes = []
         packet_bytes.append("0b011110{CV_2bits:02b}".format(CV_2bits=CV_2bits))
         packet_bytes.append("0b{CV_8bits:08b}".format(CV_8bits=CV_8bits))
-        packet_bytes.append("0b111{bitOperation:01b}{bitData:01b}{bitPosition:03b}".format(bitOperation=bitOperation, bitData=bitData, bitPosition=bitPosition))
+        packet_bytes.append("0b111{bitOperation:01b}{bitData:01b}{bitPosition:03b}".format(bitOperation=bitOperation,
+                                                                                           bitData=bitData,
+                                                                                           bitPosition=bitPosition))
         self.logger.debug(packet_bytes)
 
         # address is ignored
@@ -89,13 +93,23 @@ class DCCPacketFactory(object):
                                 data_bytes=packet_bytes,
                                 packet_type="service"))
 
+    def DCCFunctionPacket(self, locoAddress, functionsState=None):
+        """
+        Build Function Control Packet
+        """
+        if functionsState is None:
+            functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0}
+        else:
+            functionsState = functionsState._asdict()
+            for k in functionsState:
+                # Convert bool to int if any
+                functionsState[k] = int(functionsState[k])
 
-    def DCCFunctionPacket(self, locoAddress, functionsState = {"Fn1": 0, "Fn2": 0, "Fn3": 0, "Fn4": 0, "FL": 0 }):
         # Limited functions: only FN1-FN4
         # To be added!
         self.logger.debug("Creating DCC Set Function Packet")
         self.logger.debug("FunctionPacket: functionsState={functionsState}".format(functionsState=functionsState))
-        allowedFunctions = ["Fn1", "Fn2", "Fn3", "Fn4", "FL" ]
+        allowedFunctions = ["Fn1", "Fn2", "Fn3", "Fn4", "FL"]
         # Function Group One Instruction (100)
         # The format of this instruction is 100DDDDD
         # Up to 5 auxiliary functions (functions FL and F1-F4) can be controlled
@@ -110,7 +124,7 @@ class DCCPacketFactory(object):
 
         # Set defaults to "Off" for all functions
         for function in allowedFunctions:
-            if not (functionsState.has_key(function)):
+            if function not in functionsState:
                 functionsState.update({function: 0})
 
         self.logger.debug("FunctionPacket: functionsState={functionsState}".format(functionsState=functionsState))
@@ -122,17 +136,32 @@ class DCCPacketFactory(object):
                                                             Fn4=functionsState['Fn4'],
                                                             )
         self.logger.debug("FunctionPacket: {payload}".format(payload=functionPayload))
-        commandByte = "0b{prefix}{payload}".format(prefix = self.functionGroupOnePrefix, payload=functionPayload)
-
+        commandByte = "0b{prefix}{payload}".format(prefix=self.functionGroupOnePrefix, payload=functionPayload)
         self.logger.debug(commandByte)
 
         return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
                                 data_bytes=[commandByte],
                                 packet_type="control"))
 
-    def DCCSpeedDirectionPacket(self, locoAddress, speedDirection = {"speed": 0, "direction": "forward"}):
+    def DCCSpeedDirectionPacket(self, locoAddress, speedDirection=None):
+        """
+        Class builds packets for movement commnds
+        """
         self.logger.debug("Creating DCC SpeedDirection Packet")
         self.logger.debug("SpeedDirectionPacket: speedDirection={speedDirection}".format(speedDirection=speedDirection))
+
+        # Defaults for speed/direction
+        if not speedDirection:
+            speedDirection = {"speed": 0, "direction": "forward"}
+
+        # Refactoring: using namedtuple instead of dicts.
+        # Now I had to support both "old" dicts and "new"
+        # namedtuples.
+        # Check if object can be converted to dict: has method
+        # _asdict()
+        if callable(getattr(speedDirection, '_asdict', None)):
+            speedDirection = speedDirection._asdict()
+
         # Possible directions are "forward" and "reverse"
         # https://www.nmra.org/sites/default/files/s-9.2.1_2012_07.pdf
         # These two instructions have these formats:
@@ -143,10 +172,13 @@ class DCCPacketFactory(object):
         else:
             speedPrefix = "010"
         self.logger.debug("SpeedDirectionPacket: speedPrefix={speedPrefix}".format(speedPrefix=speedPrefix))
-        # A speed and direction instruction is used send information to motors connected to Multi Function Digital Decoders.
-        # Instruction "010" indicates a Speed and Direction Instruction for reverse operation and instruction "011" indicates
-        # a Speed and Direction Instruction for forward operation.
-        # In these instructions the data is used to control speed with bits 0-3 being defined exactly as in S-9.2 Section B.
+        # A speed and direction instruction is used send information to motors connected
+        # to Multi Function Digital Decoders.
+        # Instruction "010" indicates a Speed and Direction Instruction for reverse operation and
+        # instruction "011" indicates a Speed and Direction Instruction for forward operation.
+        # In these instructions the data is used to control speed with bits 0-3 being defined exactly
+        # as in S-9.2 Section B.
+        #
         # If Bit 1 of CV#29 has a value of one (1), then bit 4 is used as
         # an intermediate speed step, as defined in S-9.2, Section B.
         # If Bit 1 of CV#29 has a value of zero (0), then bit 4 shall be used to control FL3.
@@ -160,14 +192,14 @@ class DCCPacketFactory(object):
         #
         # If a decoder receives a new speed step that is within one step of current speed step,
         # the Digital Decoder may select a step half way between these two speed steps.
-        # This provides the potential to control 56 speed steps should the command station alternate speed packets.
+        # This provides the potential to control 56 speed steps should the command station
+        # alternate speed packets.
         #
-        # Decoders may ignore the direction information transmitted in a broadcast packet for Speed and Direction
-        # commands that do not contain stop or emergency stop information.
-
+        # Decoders may ignore the direction information transmitted in a broadcast packet
+        # for Speed and Direction commands that do not contain stop or emergency stop information.
 
         speedData = "0{speed:04b}".format(speed=speedDirection["speed"])
-        speedByte = "0b{speedPrefix}{speedData}".format(speedPrefix=speedPrefix,speedData=speedData)
+        speedByte = "0b{speedPrefix}{speedData}".format(speedPrefix=speedPrefix, speedData=speedData)
 
         return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
                                 data_bytes=[speedByte],
@@ -175,30 +207,34 @@ class DCCPacketFactory(object):
 
     def DCCDecoderControlPacket(self, locoAddress, action):
         self.logger.debug("Creating DCC DecoderControlPacket Packet")
-        # The decoder control instructions are intended to 
+        # The decoder control instructions are intended to
         # set up or modify decoder configurations.
-        # This instruction (0000CCCF) allows specific decoder features 
+        # This instruction (0000CCCF) allows specific decoder features
         # to be set or cleared as defined by the value of D ("1" indicates set).
-        # When the decoder has decoder acknowledgment enabled, 
-        # receipt of a decoder control instruction shall be acknowledged with an operations mode acknowledgment.
+        # When the decoder has decoder acknowledgment enabled,
+        # receipt of a decoder control instruction shall be acknowledged with an
+        # operations mode acknowledgment.
+        #
         # This instruction has the format of
-        # {instruction byte} = 0000CCCF, 
+        # {instruction byte} = 0000CCCF,
         # or
         # {instruction byte} = 0000CCCF DDDDDDDD
 
-        # CCC = 000  D = "0": Digital Decoder Reset - A Digital Decoder Reset shall erase all volatile memory 
-        #            (including and speed and direction data), and return to its initial power up 
-        #            state as defined in S- 9.2.4 section A. Command Stations shall not send packets to addresses 112-127 
-        #            for 10 packet times following a Digital Decoder Reset. This is to ensure that the decoder does not 
-        #            start executing service mode instruction packets as operations mode packets 
+        # CCC = 000  D = "0": Digital Decoder Reset - A Digital Decoder Reset shall erase all volatile memory
+        #            (including and speed and direction data), and return to its initial power up
+        #            state as defined in S- 9.2.4 section A. Command Stations shall not send packets too
+        #            addresses 112-127
+        #            for 10 packet times following a Digital Decoder Reset. This is to ensure that the decoder does not
+        #            start executing service mode instruction packets as operations mode packetso
         #            (Service Mode instruction packets have a short address in the range of 112 to 127 decimal.)
         #
-        #            D = "1": Hard Reset - Configuration Variables 29, 31 and 32 are reset to its factory default 
-        #            conditions, CV#19 is set to "00000000" and a Digital Decoder reset (as in the above instruction) 
+        #            D = "1": Hard Reset - Configuration Variables 29, 31 and 32 are reset to its factory default
+        #            conditions, CV#19 is set to "00000000" and a Digital Decoder reset (as in the above instruction)
         #            shall be performed.
         #
-        # CCC = 001  Factory Test Instruction - This instruction is used by manufacturers to test decoders at the factory. 
-        #            It must not be sent by any command station during normal operation. 
+        # CCC = 001  Factory Test Instruction - This instruction is used by manufacturers to test
+        #            decoders at the factory.
+        #            It must not be sent by any command station during normal operation.
         #            This instruction may be a multi-byte instruction.
         # CCC = 010  Reserved for future use
 
@@ -215,13 +251,13 @@ class DCCPacketFactory(object):
         #    "setFlags"             : "011",
         #    "setAdvancedAddressing": "101",
         #    "acknowledgmentRequest": "1111"
-        #}
+        # }
 
-        actions =  {
+        actions = {
             "acknowledgmentRequest": "1111"
         }
 
-        if actions.has_key(action):
+        if action in actions:
             decoderControlPacketByte = "0b0000{actionData}".format(actionData=actions[action])
             return(DCCGeneralPacket(address_byte="0b{locoAddress:08b}".format(locoAddress=locoAddress),
                                     data_bytes=[decoderControlPacketByte]))
@@ -229,7 +265,8 @@ class DCCPacketFactory(object):
             self.logger.debug("Uncknown or not implemented action, sending Idle packet")
             return(DCCGeneralPacket(address_byte=self.idleAddressByte,
                                     data_bytes=['0b00000000']))
+
     def DCCConsistControlPacket(self):
-    # Not implemented
+        # Not implemented
         return(DCCGeneralPacket(address_byte=self.idleAddressByte,
                                 data_bytes=['0b00000000']))

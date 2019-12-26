@@ -1,8 +1,18 @@
 from setuptools import setup, Extension
+import functools
+import os
+
+root = os.path.dirname(__file__)
+root = os.path.abspath(root)
+root = os.path.normpath(root)
+
+path = functools.partial(os.path.join, root)
+run_deps = open(path('requirements.txt')).readlines()
+
 setup(
     name="dccpi_mm",
     packages=["dccpi_mm"],
-    version="0.0.4",
+    version="0.0.5",
     description="DCC protocol implementation for RaspberryPi",
     author="Max Mazur",
     author_email="sirmax123@gmail.com",
@@ -10,9 +20,6 @@ setup(
     download_url="",
     license="GNU General Public License v3 (GPLv3)",
     keywords=["dcc"],
-    install_requires=[
-        'bitstring',
-    ],
     ext_modules=[
         Extension('dcc_rpi_encoder_c',
                   sources=['extensions/dcc_rpi_encoder_c.c'],
@@ -35,5 +42,6 @@ This module implements the DCC protocol for controlling model trains using a
 Raspberry Pi
 .
 To be added!
-"""
+""",
+    install_requires=run_deps
 )
