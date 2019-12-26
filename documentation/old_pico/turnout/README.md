@@ -1,7 +1,8 @@
-контакт № 4 - питание от источника (блока питания)
-контакты № 5 и 6 - питание от пульта управления (клавишника).
+* контакт № 4 - питание от источника (блока питания)
+* контакты № 5 и 6 - питание от пульта управления (клавишника).
 
-
+[Turnout1](https://github.com/sirmax123/dccpi-mm/blob/master/documentation/old_pico/turnout/PICO_Turnout_1.jpg)
+[turnout2](https://github.com/sirmax123/dccpi-mm/blob/master/documentation/old_pico/turnout/PICO_Turnout_2.jpg)
 
 Назначение контактов при нумерации их слева направо:
 1 переключение на боковой путь
