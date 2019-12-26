@@ -84,6 +84,7 @@ class DCCControlStation(object):
             else:
                 # If command is detected but it is not move of functiond
                 # just ignore it and send idle packet(s)
+                self.logger.warning("Found unexpected commnad: {command}".format(command=command))
                 self.hardware.send_bit_string(self.idle_packet, self.idle_packets_count)
 
         except KeyboardInterrupt:
