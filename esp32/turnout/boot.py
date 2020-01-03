@@ -13,8 +13,8 @@ import json
 
 
 DEFAULT_CONFIG = {
-    "tornout_id": 1,
-    "dhcp_name_prefix": "tornout",
+    "turnout_id": 1,
+    "dhcp_name_prefix": "turnout",
     "ssid": "default_ssid",
     "password": "default_password",
     "pins": {
@@ -47,7 +47,7 @@ def connect(ssid='default_ssid', password='default_pasword', connect_timeout=10,
     """
     Connect to the existing wireless network
     """
-    print("Connecting")
+    print("Connecting to {}".format(ssid))
     deadline = utime.ticks_add(utime.ticks_ms(), connect_timeout*1000)
     sta_if = network.WLAN(network.STA_IF)
     if not sta_if.isconnected():
@@ -76,8 +76,7 @@ def create_acces_point():
     """
     access_point = network.WLAN(network.AP_IF)
     octet_3 = random.randint(0, 254)
-    mac = ubinascii.hexlify(access_point.config('mac'), ':').decode()
-    ssid = "🚂__RailWay_IP_192_168_{o3}_1___{m}".format(o3=octet_3, m=mac)
+    ssid = "🚂__RailWay_IP_192_168_{o3}_1".format(o3=octet_3)
     access_point.active(True)
     access_point.config(essid=ssid)
 
@@ -87,8 +86,8 @@ def create_acces_point():
 
     access_point.ifconfig(('192.168.{o3}.1'.format(o3=octet_3),
                            '255.255.255.0', '', '8.8.8.8'))
-    print(ssid)
-    print('192.168.{o3}.1'.format(o3=octet_3))
+    print("Creating network: {ssid}".format(ssid=ssid))
+    print("Host IP: 192.168.{o3}.1".format(o3=octet_3))
     return access_point
 
 
